@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+*.pem
+
+# Worktrees (created at runtime by the agent)
+worktrees/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+
+# Build artifacts
+frontend/dist/
+infra/lambda.zip
+
+# mock-production-app has its own repo
+mock-production-app/

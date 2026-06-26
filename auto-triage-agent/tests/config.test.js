@@ -17,7 +17,6 @@ function validEnv() {
   return {
     GITHUB_TOKEN: "ghp_supersecrettoken1234567890",
     SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T000/B000/secretpath",
-    KIRO_API_KEY: "kiro-key-abcdef-secret",
     REPO_URL: "https://github.com/acme/target-repo.git",
     WEBHOOK_SECRET: "hmac-shared-secret-value",
     KIRO_TIMEOUT_MS: "120000",
@@ -27,7 +26,6 @@ function validEnv() {
 const REQUIRED_KEYS = [
   "GITHUB_TOKEN",
   "SLACK_WEBHOOK_URL",
-  "KIRO_API_KEY",
   "REPO_URL",
   "WEBHOOK_SECRET",
   "KIRO_TIMEOUT_MS",
@@ -36,7 +34,6 @@ const REQUIRED_KEYS = [
 const SECRET_KEYS = [
   "GITHUB_TOKEN",
   "SLACK_WEBHOOK_URL",
-  "KIRO_API_KEY",
   "WEBHOOK_SECRET",
 ];
 
@@ -47,7 +44,6 @@ describe("loadConfig — successful load", () => {
 
     expect(config.githubToken).toBe(env.GITHUB_TOKEN);
     expect(config.slackWebhookUrl).toBe(env.SLACK_WEBHOOK_URL);
-    expect(config.kiroApiKey).toBe(env.KIRO_API_KEY);
     expect(config.repoUrl).toBe(env.REPO_URL);
     expect(config.webhookSecret).toBe(env.WEBHOOK_SECRET);
   });

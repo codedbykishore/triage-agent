@@ -61,7 +61,7 @@ describe("worktreeManager — createWorktree", () => {
     const [cmd, args, opts] = execFile.mock.calls[0];
     expect(cmd).toBe("git");
     expect(Array.isArray(args)).toBe(true);
-    expect(args).toEqual(["worktree", "add", worktreePath, "main"]);
+    expect(args).toEqual(["worktree", "add", "--detach", worktreePath, "main"]);
     // options object carries cwd; no shell flag is ever passed.
     expect(opts).toEqual(expect.objectContaining({ cwd: expect.any(String) }));
     expect(opts.shell).toBeUndefined();

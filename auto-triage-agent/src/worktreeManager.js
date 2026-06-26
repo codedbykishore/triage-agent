@@ -177,7 +177,11 @@ async function createWorktree(incidentId, errorLog, options = {}) {
 
   try {
     // Argument array — the sanitized path and ref are passed to git directly.
-    await runGit(["worktree", "add", worktreePath, baseRef]);
+    // Use --detach so the worktree starts at the ref's commit without "checking
+    // out" the branch (which would fail if that branch is already checked out in
+    // the primary working tree). The hotfix branch is created later by
+    // githubInteractions.commitAndPush.
+    await runGit(["worktree", "add", "--detach", worktreePath, baseRef]);
   } catch (err) {
     throw structuredError(
       "WORKTREE_CREATE_FAILED",

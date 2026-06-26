@@ -21,7 +21,6 @@ require("dotenv").config();
 const REQUIRED_VARS = [
   { key: "GITHUB_TOKEN", field: "githubToken", secret: true },
   { key: "SLACK_WEBHOOK_URL", field: "slackWebhookUrl", secret: true },
-  { key: "KIRO_API_KEY", field: "kiroApiKey", secret: true },
   { key: "REPO_URL", field: "repoUrl", secret: false },
   { key: "WEBHOOK_SECRET", field: "webhookSecret", secret: true },
   { key: "KIRO_TIMEOUT_MS", field: "kiroTimeoutMs", secret: false, numeric: true },
@@ -45,7 +44,6 @@ function isPresent(value) {
  * @returns {{
  *   githubToken: string,
  *   slackWebhookUrl: string,
- *   kiroApiKey: string,
  *   repoUrl: string,
  *   webhookSecret: string,
  *   kiroTimeoutMs: number,

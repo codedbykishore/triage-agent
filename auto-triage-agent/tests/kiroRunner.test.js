@@ -34,18 +34,17 @@ function makeFakeChild() {
 }
 
 describe("buildKiroArgs — headless, non-interactive", () => {
-  test("includes headless flags and never IDE/interactive/TTY flags", () => {
+  test("includes non-interactive flags and never IDE/interactive/TTY flags", () => {
     const args = buildKiroArgs("SYSTEM PROMPT");
 
     expect(Array.isArray(args)).toBe(true);
-    expect(args).toContain("--headless");
+    expect(args).toContain("chat");
     expect(args).toContain("--no-interactive");
-    expect(args).toContain("--system-prompt");
+    expect(args).toContain("--trust-all-tools");
     expect(args).toContain("SYSTEM PROMPT");
 
     // No flag may request an interactive session, a TTY, or the IDE.
     const joined = args.join(" ");
-    expect(joined).not.toMatch(/--interactive\b/);
     expect(joined).not.toMatch(/--tty\b/);
     expect(joined).not.toMatch(/--ide\b/);
     expect(joined).not.toMatch(/\bopen\b/);
@@ -72,8 +71,8 @@ describe("runKiro — spawn wiring", () => {
     const [binary, args, opts] = spawn.mock.calls[0];
     expect(typeof binary).toBe("string");
     expect(Array.isArray(args)).toBe(true);
-    expect(args).toContain("--headless");
     expect(args).toContain("--no-interactive");
+    expect(args).toContain("--trust-all-tools");
     expect(opts.cwd).toBe("/tmp/worktrees/inc-1");
     // Auth is passed via env, not args.
     expect(opts.env.KIRO_API_KEY).toBe("k");

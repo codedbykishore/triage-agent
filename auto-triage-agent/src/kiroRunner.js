@@ -44,7 +44,7 @@ const DEFAULT_PROMPT_PATH = path.resolve(
  * `options.binary` (handy for tests / alternate installs).
  * @type {string}
  */
-const DEFAULT_BINARY = "kiro";
+const DEFAULT_BINARY = "kiro-cli";
 
 /**
  * Fallback timeout (ms) if neither `options.timeoutMs` nor KIRO_TIMEOUT_MS is set.
@@ -94,9 +94,10 @@ function loadSystemPrompt(promptPath = DEFAULT_PROMPT_PATH) {
 /**
  * Build the CLI argument array for a HEADLESS, non-interactive Kiro run.
  *
- * The flags below explicitly request one-shot, headless execution and supply
- * the system prompt. There are deliberately NO interactive, TTY, or IDE flags —
- * this array must be safe to pass to a process with no controlling terminal.
+ * Uses `kiro-cli chat --no-interactive --trust-all-tools` with the system prompt
+ * passed as the initial INPUT argument. This runs Kiro in one-shot mode: it
+ * processes the prompt, performs the task, and exits. No TTY or interactive
+ * flags are used.
  *
  * @param {string} systemPrompt
  * @returns {string[]} argument array (never a shell string).
@@ -104,9 +105,8 @@ function loadSystemPrompt(promptPath = DEFAULT_PROMPT_PATH) {
 function buildKiroArgs(systemPrompt) {
   return [
     "chat",
-    "--headless",
     "--no-interactive",
-    "--system-prompt",
+    "--trust-all-tools",
     typeof systemPrompt === "string" ? systemPrompt : "",
   ];
 }
@@ -136,10 +136,15 @@ function runKiro(worktreePath, systemPrompt, options = {}) {
   return new Promise((resolve, reject) => {
     let child;
     try {
+      // HOME must point to the user home where kiro-cli auth is cached (device flow).
+      // When running under PM2/root, the system HOME is /root but the kiro-cli login
+      // was done as ec2-user. Prefer KIRO_HOME env var, fall back to HOME.
+      const kiroHome = process.env.KIRO_HOME || process.env.HOME;
       child = spawnFn(binary, args, {
         cwd: worktreePath,
-        // Auth via env; never bake the key into args (which can leak via ps).
-        env: { ...process.env, KIRO_API_KEY: apiKey },
+        // Pass HOME so kiro-cli finds its cached auth token from device flow.
+        // KIRO_API_KEY is kept for backward compat but kiro-cli uses its own auth.
+        env: { ...process.env, KIRO_API_KEY: apiKey, HOME: kiroHome },
         // No stdin: headless runs never read from a TTY.
         stdio: ["ignore", "pipe", "pipe"],
       });
