@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+
+# Per-incident isolated worktrees
+worktrees/
+
+# Logs
+*.log
