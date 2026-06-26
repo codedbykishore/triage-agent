@@ -1,0 +1,43 @@
+{
+    "CallerReference": "orderflow-dashboard-2026",
+    "Comment": "OrderFlow Dashboard",
+    "DefaultCacheBehavior": {
+        "TargetOriginId": "S3-orderflow-dashboard",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+                "GET",
+                "HEAD"
+            ]
+        },
+        "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+        "Compress": true
+    },
+    "Origins": {
+        "Quantity": 1,
+        "Items": [
+            {
+                "Id": "S3-orderflow-dashboard",
+                "DomainName": "orderflow-dashboard-516097795726.s3.us-east-1.amazonaws.com",
+                "S3OriginConfig": {
+                    "OriginAccessIdentity": ""
+                },
+                "OriginAccessControlId": "EBD7TPUHN6TSZ"
+            }
+        ]
+    },
+    "Enabled": true,
+    "DefaultRootObject": "index.html",
+    "CustomErrorResponses": {
+        "Quantity": 1,
+        "Items": [
+            {
+                "ErrorCode": 403,
+                "ResponsePagePath": "/index.html",
+                "ResponseCode": "200",
+                "ErrorCachingMinTTL": 0
+            }
+        ]
+    }
+}

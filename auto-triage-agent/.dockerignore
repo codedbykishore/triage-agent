@@ -1,0 +1,26 @@
+# Keep the build context lean and avoid leaking local state/secrets into the image.
+
+# Installed dependencies — reinstalled inside the image via `npm ci`.
+node_modules/
+
+# Local environment / secrets — secrets are provided at runtime via env only.
+.env
+.env.*
+!.env.example
+
+# Per-incident isolated worktrees created at runtime.
+worktrees/
+
+# Logs
+*.log
+
+# Git metadata
+.git/
+.gitignore
+
+# Tests are not needed in the production image.
+tests/
+
+# Docker artifacts
+Dockerfile
+.dockerignore
