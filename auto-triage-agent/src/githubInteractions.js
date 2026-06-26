@@ -302,12 +302,36 @@ async function createPullRequest(incidentId, prMeta = {}) {
     );
 
     const prUrl = response && response.data && response.data.html_url;
+    const prNumber = response && response.data && response.data.number;
     if (!prUrl) {
       throw structuredError(
         "PR creation returned no html_url",
         "PR_CREATE_FAILED"
       );
     }
+
+    // Request reviewers (best-effort — don't fail the PR if this errors)
+    const reviewers = process.env.PR_REVIEWERS
+      ? process.env.PR_REVIEWERS.split(",").map((r) => r.trim())
+      : ["heyitsgautham"];
+    if (prNumber && reviewers.length > 0) {
+      try {
+        await httpClient.post(
+          `https://api.github.com/repos/${slug}/pulls/${prNumber}/requested_reviewers`,
+          { reviewers },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+          }
+        );
+      } catch (_reviewErr) {
+        // Best-effort: reviewer request failing should not block the PR.
+      }
+    }
+
     return prUrl;
   } catch (error) {
     if (error && error.code === "PR_CREATE_FAILED") {
