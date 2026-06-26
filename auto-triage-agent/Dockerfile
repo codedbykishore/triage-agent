@@ -22,13 +22,28 @@ FROM node:20-bookworm-slim
 
 # Install Git, which the worktree manager and GitHub interactions shell out to,
 # plus ca-certificates/curl needed to fetch the Kiro CLI and reach the GitHub
-# and Slack HTTPS APIs at runtime.
+# and Slack HTTPS APIs at runtime. `tmux` hosts a persistent session for the
+# demo terminal so the live agent output survives detach/attach.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         ca-certificates \
         curl \
+        tmux \
     && rm -rf /var/lib/apt/lists/*
+
+# ---- ttyd (web terminal for live demos) ----------------------------------
+# ttyd renders a terminal in the browser so judges can watch the Kiro agent
+# work in real time (see scripts/demo-terminal.sh). We fetch a pinned static
+# binary from the official releases rather than apt so the version is
+# deterministic across base-image updates. This is presentation tooling only —
+# it carries no secrets and is unrelated to the triage logic.
+ARG TTYD_VERSION=1.7.7
+RUN curl -fsSL \
+        "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" \
+        -o /usr/local/bin/ttyd \
+    && chmod +x /usr/local/bin/ttyd \
+    && ttyd --version
 
 # ---- Kiro CLI (headless binary) ------------------------------------------
 # The Controller drives triage entirely through the headless, non-interactive
@@ -79,7 +94,9 @@ COPY . .
 
 # ---- Networking ----------------------------------------------------------
 # The Express webhook server listens on PORT (defaults to 3000 in server.js).
-EXPOSE 3000
+# Port 7681 is the ttyd web terminal used for the live demo (see
+# scripts/demo-terminal.sh); it is only reachable when that script is run.
+EXPOSE 3000 7681
 
 # ---- Healthcheck ---------------------------------------------------------
 # Liveness probe hitting the GET /health endpoint exposed by server.js.
@@ -88,4 +105,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # ---- Runtime -------------------------------------------------------------
 # Run as an always-on worker. Secrets are provided via runtime env, not here.
+#
+# Default: run the controller directly (production). For a live demo where
+# judges watch the agent in a browser, override the command to launch the
+# controller inside tmux behind the ttyd web terminal:
+#
+#   docker run --env-file .env -p 3000:3000 -p 7681:7681 \
+#     auto-triage-agent ./scripts/demo-terminal.sh
+#
 CMD ["node", "src/server.js"]

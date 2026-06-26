@@ -121,6 +121,16 @@ function buildKiroArgs(systemPrompt) {
  * @param {string} [options.binary] - override the Kiro CLI binary.
  * @param {string} [options.apiKey] - override KIRO_API_KEY.
  * @param {function} [options.spawn] - injectable spawn (tests).
+ * @param {boolean} [options.stream] - when true, echo the child's stdout/stderr
+ *   live to the Controller's own stdout/stderr (so a tmux/ttyd session can show
+ *   the agent working in real time for a demo). When omitted, streaming is ON
+ *   unless NODE_ENV==="test" or KIRO_STREAM_OUTPUT==="false". Output is ALWAYS
+ *   captured into the returned strings regardless of this flag.
+ * @param {function} [options.onData] - optional sink `(chunk, stream)` invoked
+ *   for each output chunk ("stdout"|"stderr"). When provided it REPLACES the
+ *   default process.stdout/stderr echo (used for SSE/websocket fan-out).
+ * @param {string} [options.label] - optional header printed once before the
+ *   live stream (e.g. the incident id) so a viewer knows which run this is.
  * @returns {Promise<{ exitCode: number, stdout: string, stderr: string, timedOut: boolean }>}
  */
 function runKiro(worktreePath, systemPrompt, options = {}) {
@@ -132,6 +142,33 @@ function runKiro(worktreePath, systemPrompt, options = {}) {
     typeof options.apiKey === "string" ? options.apiKey : process.env.KIRO_API_KEY;
   const spawnFn = typeof options.spawn === "function" ? options.spawn : spawn;
   const args = buildKiroArgs(systemPrompt);
+
+  // Decide whether to echo the child's output live to the Controller terminal.
+  // A custom onData sink always wins; otherwise default to ON outside tests so
+  // a tmux/ttyd demo session shows Kiro working without any extra wiring.
+  const onData = typeof options.onData === "function" ? options.onData : null;
+  const streamEnabled =
+    options.stream === true
+      ? true
+      : options.stream === false
+        ? false
+        : process.env.KIRO_STREAM_OUTPUT === "false"
+          ? false
+          : process.env.NODE_ENV !== "test";
+
+  /**
+   * Route one output chunk: always to the custom sink if present, else echo to
+   * the Controller's matching stream when streaming is enabled.
+   * @param {string} text
+   * @param {"stdout"|"stderr"} streamName
+   */
+  const emit = (text, streamName) => {
+    if (onData) {
+      onData(text, streamName);
+    } else if (streamEnabled) {
+      (streamName === "stderr" ? process.stderr : process.stdout).write(text);
+    }
+  };
 
   return new Promise((resolve, reject) => {
     let child;
@@ -158,6 +195,12 @@ function runKiro(worktreePath, systemPrompt, options = {}) {
     let timedOut = false;
     let settled = false;
 
+    // Print a one-time header so a viewer (tmux/ttyd) can tell which incident
+    // this live stream belongs to. Only when we are actually echoing output.
+    if (streamEnabled && !onData && typeof options.label === "string" && options.label.length) {
+      process.stdout.write(`\n=== Kiro triage: ${options.label} ===\n`);
+    }
+
     const timer = setTimeout(() => {
       timedOut = true;
       try {
@@ -169,12 +212,16 @@ function runKiro(worktreePath, systemPrompt, options = {}) {
 
     if (child.stdout && typeof child.stdout.on === "function") {
       child.stdout.on("data", (chunk) => {
-        stdout += chunk.toString();
+        const text = chunk.toString();
+        stdout += text;
+        emit(text, "stdout");
       });
     }
     if (child.stderr && typeof child.stderr.on === "function") {
       child.stderr.on("data", (chunk) => {
-        stderr += chunk.toString();
+        const text = chunk.toString();
+        stderr += text;
+        emit(text, "stderr");
       });
     }
 

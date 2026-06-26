@@ -145,8 +145,12 @@ async function handleIncident(incident, deps = {}) {
     // Step 1: isolated environment.
     worktreePath = await createWorktree(incidentId, incident && incident.rawPayload);
 
-    // Step 2: triage with Kiro (headless, scoped to the worktree).
-    const kiroResult = await runKiro(worktreePath, loadSystemPrompt());
+    // Step 2: triage with Kiro (headless, scoped to the worktree). Pass the
+    // incident id as a label so the live-streamed output (shown in a tmux/ttyd
+    // demo terminal) is clearly attributed to this run.
+    const kiroResult = await runKiro(worktreePath, loadSystemPrompt(), {
+      label: incidentId,
+    });
 
     // Triage is successful ONLY when exitCode === 0 AND timedOut === false.
     const triageSucceeded =

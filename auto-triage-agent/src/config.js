@@ -27,6 +27,15 @@ const REQUIRED_VARS = [
 ];
 
 /**
+ * Optional environment variables mapped to their `Config` field names.
+ * These are loaded if present but do not cause startup failure when absent.
+ * @type {Array<{ key: string, field: string, secret: boolean }>}
+ */
+const OPTIONAL_VARS = [
+  { key: "SLACK_DEPLOYMENTS_WEBHOOK_URL", field: "slackDeploymentsWebhookUrl", secret: true },
+];
+
+/**
  * Determine whether a raw env value counts as "present".
  * Empty strings and whitespace-only values are treated as missing so that an
  * uncommented-but-blank entry in `.env` still fails fast.
@@ -79,6 +88,13 @@ function loadConfig(env = process.env) {
   }
   config.kiroTimeoutMs = timeoutMs;
 
+  // Load optional variables (non-fatal if missing).
+  for (const { key, field } of OPTIONAL_VARS) {
+    if (isPresent(env[key])) {
+      config[field] = env[key];
+    }
+  }
+
   /**
    * The configured secret VALUES, for downstream secret-scrubbing (e.g. the
    * Slack notifier / orchestrator strip these from any error snippet).
@@ -86,7 +102,8 @@ function loadConfig(env = process.env) {
    * @returns {string[]}
    */
   config.getSecretValues = function getSecretValues() {
-    return REQUIRED_VARS.filter((v) => v.secret)
+    const allSecretDefs = [...REQUIRED_VARS, ...OPTIONAL_VARS].filter((v) => v.secret);
+    return allSecretDefs
       .map((v) => config[v.field])
       .filter((value) => typeof value === "string" && value.length > 0);
   };
